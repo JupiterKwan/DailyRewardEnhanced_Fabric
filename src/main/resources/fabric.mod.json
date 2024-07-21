@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "daily-reward-enhanced",
+	"version": "${version}",
+	"name": "Daily-Reward-Enhanced",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/daily-reward-enhanced/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"mc.central.hk.DailyRewardEnhanced"
+		],
+		"client": [
+			"mc.central.hk.DailyRewardEnhancedClient"
+		],
+		"fabric-datagen": [
+			"mc.central.hk.DailyRewardEnhancedDataGenerator"
+		]
+	},
+	"mixins": [
+		"daily-reward-enhanced.mixins.json",
+		{
+			"config": "daily-reward-enhanced.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.15.11",
+		"minecraft": "~1.21",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}

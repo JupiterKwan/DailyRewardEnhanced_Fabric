@@ -29,6 +29,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
@@ -65,7 +66,7 @@ public class OnPlayerConnectMixin {
             CompletableFuture<Void> futureRollReward = CompletableFuture.supplyAsync(() -> {
 
                 try {
-                    Thread.sleep(600);
+                    Thread.sleep(750);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -75,14 +76,14 @@ public class OnPlayerConnectMixin {
                 Text titleText;
                 SoundEvent soundEvent;
                 try {
-                    Thread.sleep(2500);
+                    Thread.sleep(1800);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
 
                 // Roll Control
                 // ====GameTick is 20 per second====
-                int titleShowMinTick = 3;
+                int titleShowMinTick = 2;
                 int titleShowMaxTick = 20;
                 int count = 0;
                 // =================================
@@ -90,7 +91,7 @@ public class OnPlayerConnectMixin {
                 while (titleShowMinTick < titleShowMaxTick) {
 //                for (int i = 0; i < 30; i++) {
                     ItemStack itemStack = randItemStack();
-                    titleFadeS2CPacket = new TitleFadeS2CPacket(0, titleShowMinTick, 0);
+                    titleFadeS2CPacket = new TitleFadeS2CPacket(2, titleShowMinTick, 2);
                     player.networkHandler.sendPacket(titleFadeS2CPacket);
                     Text rewardText = Text.literal("今日登錄獎勵係...").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
                     player.networkHandler.sendPacket(new TitleS2CPacket(rewardText));
@@ -117,7 +118,7 @@ public class OnPlayerConnectMixin {
                 ItemStack itemStack = randItemStack();
 
                 while (!isItem) {
-                    DailyRewardEnhanced.LOGGER.info("{}{}", itemStack.getItem().getTranslationKey().split("\\.")[2], itemStack.getCount());
+                    DailyRewardEnhanced.LOGGER.info("{}{}", itemStack.getItem().getTranslationKey().split("\\.")[2], " * ", itemStack.getCount());
                     if (DailyRewardEnhanced.CONFIG.loadBlackList().toString().contains(itemStack.getItem().getTranslationKey().split("\\.")[2])) {
                         itemStack = randItemStack();
                     } else {
@@ -126,11 +127,12 @@ public class OnPlayerConnectMixin {
                 }
 
                 Text rewardText = Text.literal("今日登錄獎勵係：" + itemStack.getItem().getTranslationKey().split("\\.")[2] + " * " + itemStack.getCount()).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
-                player.sendMessage(rewardText, false);
                 titleFadeS2CPacket = new TitleFadeS2CPacket(0, 20 * 2, 20);
                 player.networkHandler.sendPacket(titleFadeS2CPacket);
                 titleText = Text.literal(String.valueOf(itemStack.getItem().getTranslationKey().split("\\.")[2])).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
                 player.networkHandler.sendPacket(new TitleS2CPacket(titleText));
+                player.networkHandler.sendPacket(new SubtitleS2CPacket(Text.of("")));
+                player.networkHandler.sendPacket(new GameMessageS2CPacket(rewardText, false));
                 soundEvent = SoundEvents.ENTITY_PLAYER_LEVELUP;
                 player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1,1, 1));
                 if (isPlayerInventoryFull(player)) {
@@ -151,12 +153,12 @@ public class OnPlayerConnectMixin {
 
     @Unique
     private void SendHello(ServerPlayerEntity player) {
-        TitleFadeS2CPacket titleFadeS2CPacket = new TitleFadeS2CPacket(10, 15 * 2, 10);
+        TitleFadeS2CPacket titleFadeS2CPacket = new TitleFadeS2CPacket(5, 15 * 2, 5);
         player.networkHandler.sendPacket(titleFadeS2CPacket);
         Text titleText = Text.literal("歡迎翻來!").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
         Text titleText2 = Text.literal("Central HK").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
         SoundEvent soundEvent = SoundEvents.ENTITY_CAT_PURREOW;
-        player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1,1, 1));
+        player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1,1, new Random().nextLong(100000L)));
         player.networkHandler.sendPacket(new TitleS2CPacket(titleText));
         player.networkHandler.sendPacket(new SubtitleS2CPacket(titleText2));
     }

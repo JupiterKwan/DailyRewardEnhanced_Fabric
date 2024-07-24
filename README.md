@@ -4,7 +4,7 @@
 
 ### Author: JupiterKwan
 
-### CurrentVersion: 1.0.0
+### CurrentVersion: 1.1
 
 ---
 
@@ -19,6 +19,10 @@ versions as well (if it exists).
 
 Download the Jar Mod from Release, put it into your Fabric server's `````./Mod````` folder, restart your
 server and good to go.
+
+## In Game Command
+
+Current has two command for this plugin: ```/rewardBlackList``` & ```/rewardBlackListAdd <itemName>``` and their usage are apparently show what they can do. :>
 
 ## Config
 
@@ -42,15 +46,26 @@ in ```./build/libs``` folder.
 
 ---
 
-## Version 1.0.0
+## TODO
 
-### Features
+- Support to display multi-language item name.
+- Optimize player's last-login-date to make it remember who has logged in when server shutdown.
+
+---
+
+## Update News
+
+### Version 1.1
+
+- Add luxury roll effect with sound &  ```/Title``` command.
+- Add Customized command to add black list item & show reward black list.
+- Fix some bugs.
+
+### Version 1.0
+
+#### Features
 
 - Migrate Code from Spigot to Fabric. If you are using ```paper/spigot``` server, you can check out [DailyReward_Spigot](https://github.com/JupiterKwan/DailyReward_Spigot).
 
-### TODO
 
-- Luxury roll effect with sound &  ```/Title``` command.
-- Add Customized command to add black list item & show reward black list.
-- Optimize player's last-login-date to make it remember who has logged in when server shutdown.
 

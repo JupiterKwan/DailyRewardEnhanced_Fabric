@@ -91,14 +91,14 @@ public class OnPlayerConnectMixin {
                 while (titleShowMinTick < titleShowMaxTick) {
 //                for (int i = 0; i < 30; i++) {
                     ItemStack itemStack = randItemStack();
-                    titleFadeS2CPacket = new TitleFadeS2CPacket(2, titleShowMinTick, 2);
+                    titleFadeS2CPacket = new TitleFadeS2CPacket(0, titleShowMinTick, 0);
                     player.networkHandler.sendPacket(titleFadeS2CPacket);
                     Text rewardText = Text.literal("今日登錄獎勵係...").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
                     player.networkHandler.sendPacket(new TitleS2CPacket(rewardText));
                     titleText = Text.literal(String.valueOf(itemStack.getItem().getTranslationKey().split("\\.")[2])).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
                     player.networkHandler.sendPacket(new SubtitleS2CPacket(titleText));
                     soundEvent = SoundEvents.BLOCK_DISPENSER_FAIL;
-                    player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1,1, 1));
+                    player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, 1));
                     player.playSound(SoundEvents.BLOCK_DISPENSER_LAUNCH);
                     try {
                         Thread.sleep(titleShowMinTick * 45L);
@@ -116,10 +116,11 @@ public class OnPlayerConnectMixin {
 
                 boolean isItem = false;
                 ItemStack itemStack = randItemStack();
+//                ItemStack itemStack = new ItemStack(Items.RECOVERY_COMPASS, 3);
 
                 while (!isItem) {
-                    DailyRewardEnhanced.LOGGER.info("{}{}", itemStack.getItem().getTranslationKey().split("\\.")[2], " * ", itemStack.getCount());
-                    if (DailyRewardEnhanced.CONFIG.loadBlackList().toString().contains(itemStack.getItem().getTranslationKey().split("\\.")[2])) {
+                    DailyRewardEnhanced.LOGGER.info("{} * {}", itemStack.getItem().getTranslationKey().split("\\.")[2], itemStack.getCount());
+                    if (DailyRewardEnhanced.CONFIG.loadBlackList().contains(itemStack.getItem().getTranslationKey().split("\\.")[2])) {
                         itemStack = randItemStack();
                     } else {
                         isItem = true;
@@ -134,7 +135,7 @@ public class OnPlayerConnectMixin {
                 player.networkHandler.sendPacket(new SubtitleS2CPacket(Text.of("")));
                 player.networkHandler.sendPacket(new GameMessageS2CPacket(rewardText, false));
                 soundEvent = SoundEvents.ENTITY_PLAYER_LEVELUP;
-                player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1,1, 1));
+                player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, 1));
                 if (isPlayerInventoryFull(player)) {
                     Text fullInventoryText = Text.literal("注意啦，獎勵喺你嘅腳下喔").setStyle(Style.EMPTY.withColor(Formatting.RED));
                     player.sendMessage(fullInventoryText, false);
@@ -158,7 +159,7 @@ public class OnPlayerConnectMixin {
         Text titleText = Text.literal("歡迎翻來!").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
         Text titleText2 = Text.literal("Central HK").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
         SoundEvent soundEvent = SoundEvents.ENTITY_CAT_PURREOW;
-        player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1,1, new Random().nextLong(100000L)));
+        player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, new Random().nextLong(100000L)));
         player.networkHandler.sendPacket(new TitleS2CPacket(titleText));
         player.networkHandler.sendPacket(new SubtitleS2CPacket(titleText2));
     }

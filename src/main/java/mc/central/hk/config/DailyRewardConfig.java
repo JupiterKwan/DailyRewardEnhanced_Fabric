@@ -4,7 +4,9 @@ import com.mojang.brigadier.context.CommandContext;
 import mc.central.hk.DailyRewardEnhanced;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 import java.io.*;
 import java.util.*;
@@ -20,13 +22,13 @@ public class DailyRewardConfig {
 
     public int addBlackList(CommandContext<ServerCommandSource> ctx, String itemName) {
         if (this.blacklist.contains(itemName)) {
-            ctx.getSource().sendFeedback(() -> Text.literal("%s is already in black list!".formatted(itemName)), false);
+            ctx.getSource().sendFeedback(() -> Text.literal("%s is already in black list!".formatted(itemName)).setStyle(Style.EMPTY.withColor(Formatting.RED)), false);
             return 0;
         } else {
             DailyRewardEnhanced.CONFIG.blacklist.add(itemName);
             int result = Manager.writeConfig(DailyRewardEnhanced.CONFIG.blacklist);
             if (result == 1) {
-                ctx.getSource().sendFeedback(() -> Text.literal("%s is added to black list.".formatted(itemName)), true);
+                ctx.getSource().sendFeedback(() -> Text.literal("%s is added to black list.".formatted(itemName)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), true);
                 return 1;
             } else {
                 ctx.getSource().sendFeedback(() -> Text.literal("Something went wrong! So sad."), true);

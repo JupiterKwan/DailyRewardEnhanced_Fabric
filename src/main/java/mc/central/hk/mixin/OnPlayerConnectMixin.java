@@ -66,7 +66,7 @@ public class OnPlayerConnectMixin {
             CompletableFuture<Void> futureRollReward = CompletableFuture.supplyAsync(() -> {
 
                 try {
-                    Thread.sleep(750);
+                    Thread.sleep(1500);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -89,17 +89,16 @@ public class OnPlayerConnectMixin {
                 // =================================
 
                 while (titleShowMinTick < titleShowMaxTick) {
-//                for (int i = 0; i < 30; i++) {
                     ItemStack itemStack = randItemStack();
                     titleFadeS2CPacket = new TitleFadeS2CPacket(0, titleShowMinTick, 0);
                     player.networkHandler.sendPacket(titleFadeS2CPacket);
                     Text rewardText = Text.literal("今日登錄獎勵係...").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
                     player.networkHandler.sendPacket(new TitleS2CPacket(rewardText));
-                    titleText = Text.literal(String.valueOf(itemStack.getItem().getTranslationKey().split("\\.")[2])).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
+//                    titleText = Text.literal(String.valueOf(itemStack.getItem().getTranslationKey().split("\\.")[2])).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
+                    titleText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
                     player.networkHandler.sendPacket(new SubtitleS2CPacket(titleText));
                     soundEvent = SoundEvents.BLOCK_DISPENSER_FAIL;
                     player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, 1));
-                    player.playSound(SoundEvents.BLOCK_DISPENSER_LAUNCH);
                     try {
                         Thread.sleep(titleShowMinTick * 45L);
                     } catch (InterruptedException e) {
@@ -127,14 +126,15 @@ public class OnPlayerConnectMixin {
                     }
                 }
 
-                Text rewardText = Text.literal("今日登錄獎勵係：" + itemStack.getItem().getTranslationKey().split("\\.")[2] + " * " + itemStack.getCount()).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
+                Text rewardText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
                 titleFadeS2CPacket = new TitleFadeS2CPacket(0, 20 * 2, 20);
                 player.networkHandler.sendPacket(titleFadeS2CPacket);
-                titleText = Text.literal(String.valueOf(itemStack.getItem().getTranslationKey().split("\\.")[2])).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
+                titleText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
                 player.networkHandler.sendPacket(new TitleS2CPacket(titleText));
                 player.networkHandler.sendPacket(new SubtitleS2CPacket(Text.of("")));
-                player.networkHandler.sendPacket(new GameMessageS2CPacket(rewardText, false));
-                soundEvent = SoundEvents.ENTITY_PLAYER_LEVELUP;
+                player.server.getPlayerManager().broadcast(Text.literal(player.getName().getLiteralString() + "今日登錄獎勵係：").setStyle(Style.EMPTY.withColor(Formatting.GOLD)), false);
+                player.server.getPlayerManager().broadcast(rewardText, false);
+                soundEvent = SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP;
                 player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, 1));
                 if (isPlayerInventoryFull(player)) {
                     Text fullInventoryText = Text.literal("注意啦，獎勵喺你嘅腳下喔").setStyle(Style.EMPTY.withColor(Formatting.RED));

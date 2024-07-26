@@ -1,10 +1,10 @@
 # DailyRewardEnhanced - Minecraft Mod for Fabric Server
 
----
-
 ### Author: JupiterKwan
 
-### CurrentVersion: 1.2
+### CurrentVersion: 1.2 
+
+### [![build](https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/actions/workflows/build.yml/badge.svg)](https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/actions/workflows/build.yml)
 
 ---
 
@@ -44,13 +44,9 @@ The example config is below:
 This is a Gradle project made in Intellij Idea with JDK 21. To compile, simply run ```build``` & ```jar```. The output JAR will be located
 in ```./build/libs``` folder.
 
----
-
 ## TODO
 
 - Still thinking...
-
----
 
 ## Update News
 

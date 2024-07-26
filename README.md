@@ -4,7 +4,7 @@
 
 ### Author: JupiterKwan
 
-### CurrentVersion: 1.1
+### CurrentVersion: 1.2
 
 ---
 
@@ -48,12 +48,16 @@ in ```./build/libs``` folder.
 
 ## TODO
 
-- Support to display multi-language item name.
-- Optimize player's last-login-date to make it remember who has logged in when server shutdown.
+- Still thinking...
 
 ---
 
 ## Update News
+
+### Version 1.2
+
+- Support to display multi-language item name.
+- Optimize player's last-login-date to make it remember who has logged in when server shutdown.
 
 ### Version 1.1
 

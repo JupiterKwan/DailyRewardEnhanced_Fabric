@@ -7,16 +7,19 @@ import com.google.gson.JsonSyntaxException;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import mc.central.hk.config.DailyRewardConfig;
+import mc.central.hk.config.PlayersLastLoginConfig;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.minecraft.command.CommandSource;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.world.event.GameEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,13 +36,13 @@ public class DailyRewardEnhanced implements ModInitializer {
     public static final String MOD_ID = "daily-reward-enhanced";
     public static final Gson GSON = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).setPrettyPrinting().create();
     public static final DailyRewardConfig CONFIG = new DailyRewardConfig();
-    public static final HashMap<String, LocalDate> PLAYER_LOGIN_DATES = new HashMap<>();
+    public static final PlayersLastLoginConfig PLAYER_LOGIN_DATES = new PlayersLastLoginConfig();
 
     @Override
     public void onInitialize() {
         try {
-            PLAYER_LOGIN_DATES.clear();
             DailyRewardConfig.Manager.loadConfig();
+            PLAYER_LOGIN_DATES.loadPlayersLoginDate();
         } catch (JsonSyntaxException e) {
             LOGGER.error("Invalid JSON syntax in the config file", e);
         }

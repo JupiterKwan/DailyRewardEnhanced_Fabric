@@ -1,17 +1,14 @@
 package mc.central.hk.mixin;
 
-import com.llamalad7.mixinextras.sugar.Local;
 import mc.central.hk.DailyRewardEnhanced;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.PlayerManager;
-import net.minecraft.server.command.PlaySoundCommand;
 import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
@@ -26,10 +23,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.io.IOException;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
@@ -53,11 +48,12 @@ public class OnPlayerConnectMixin {
     @Inject(at = @At(value = "RETURN"), method = "onPlayerConnect")
     private void onPlayerJoin(ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData, CallbackInfo ci) throws InterruptedException {
         boolean isAlreadyLogin = false;
-        if (DailyRewardEnhanced.PLAYER_LOGIN_DATES.containsKey(player.getUuid().toString())) {
-            LocalDate lastLoginDate = DailyRewardEnhanced.PLAYER_LOGIN_DATES.get(player.getUuid().toString());
-            if (LocalDate.now().equals(lastLoginDate)) {
+        if (DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayersLoginDate().containsKey(player.getUuid().toString())) {
+            String lastLoginDate = DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayersLoginDate().get(player.getUuid().toString());
+            player.sendMessage(Text.literal("上次登錄日期為：").append(Text.literal(lastLoginDate)).setStyle(Style.EMPTY.withColor(Formatting.GRAY)), false);
+            if (LocalDate.now().toString().equals(lastLoginDate)) {
                 isAlreadyLogin = true;
-                player.sendMessage(Text.literal("You've logged in today! No reward this time!").setStyle(Style.EMPTY.withColor(Formatting.GRAY)), false);
+                player.sendMessage(Text.literal("今天已經登錄過，跳過獎勵！").setStyle(Style.EMPTY.withColor(Formatting.GRAY)), false);
             }
         }
 
@@ -115,7 +111,6 @@ public class OnPlayerConnectMixin {
 
                 boolean isItem = false;
                 ItemStack itemStack = randItemStack();
-//                ItemStack itemStack = new ItemStack(Items.RECOVERY_COMPASS, 3);
 
                 while (!isItem) {
                     DailyRewardEnhanced.LOGGER.info("{} * {}", itemStack.getItem().getTranslationKey().split("\\.")[2], itemStack.getCount());
@@ -126,7 +121,7 @@ public class OnPlayerConnectMixin {
                     }
                 }
 
-                Text rewardText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
+                Text rewardText = Text.translatable(itemStack.getItem().getTranslationKey()).append(Text.literal(" * ")).append(Text.literal(String.valueOf(itemStack.getCount()))).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
                 titleFadeS2CPacket = new TitleFadeS2CPacket(0, 20 * 2, 20);
                 player.networkHandler.sendPacket(titleFadeS2CPacket);
                 titleText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
@@ -144,7 +139,11 @@ public class OnPlayerConnectMixin {
                     player.getInventory().insertStack(itemStack);
                 }
                 DailyRewardEnhanced.LOGGER.info(String.valueOf(LocalDate.now()));
-                DailyRewardEnhanced.PLAYER_LOGIN_DATES.put(player.getUuid().toString(), LocalDate.now());
+                try {
+                    DailyRewardEnhanced.PLAYER_LOGIN_DATES.putPlayerLoginDate(player.getUuid().toString(), LocalDate.now().toString());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 return null;
             });
         } else {

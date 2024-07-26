@@ -3,13 +3,13 @@
 	"id": "daily-reward-enhanced",
 	"version": "${version}",
 	"name": "Daily-Reward-Enhanced",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Give everyone 1 - 5 random items as reward when they first login everyday. :)",
 	"authors": [
 		"Me!"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/JupiterKwan/",
+		"sources": "https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/"
 	},
 	"license": "CC0-1.0",
 	"icon": "assets/daily-reward-enhanced/icon.png",

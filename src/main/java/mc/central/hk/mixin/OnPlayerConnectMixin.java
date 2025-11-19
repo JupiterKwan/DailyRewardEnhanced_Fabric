@@ -8,6 +8,7 @@ import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -127,8 +128,13 @@ public class OnPlayerConnectMixin {
                 titleText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
                 player.networkHandler.sendPacket(new TitleS2CPacket(titleText));
                 player.networkHandler.sendPacket(new SubtitleS2CPacket(Text.of("")));
-                player.server.getPlayerManager().broadcast(Text.literal(player.getName().getLiteralString() + "今日登錄獎勵係：").setStyle(Style.EMPTY.withColor(Formatting.GOLD)), false);
-                player.server.getPlayerManager().broadcast(rewardText, false);
+
+                MinecraftServer server = ((ServerPlayerEntityAccessor) player).getServer();
+                server.getPlayerManager().broadcast(Text.literal(player.getName().getLiteralString() + "今日登錄獎勵係：").setStyle(Style.EMPTY.withColor(Formatting.GOLD)), false);
+                server.getPlayerManager().broadcast(rewardText, false);
+//                player.server.getPlayerManager().broadcast(Text.literal(player.getName().getLiteralString() + "今日登錄獎勵係：").setStyle(Style.EMPTY.withColor(Formatting.GOLD)), false);
+//                player.server.getPlayerManager().broadcast(rewardText, false);
+
                 soundEvent = SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP;
                 player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, 1));
                 if (isPlayerInventoryFull(player)) {

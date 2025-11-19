@@ -30,7 +30,8 @@
 		{
 			"config": "daily-reward-enhanced.client.mixins.json",
 			"environment": "client"
-		}
+		},
+        "mc.central.hk.mixin.ServerPlayerEntityAccessor"
 	],
 	"depends": {
 		"fabricloader": ">=0.15.11",

@@ -8,7 +8,6 @@ import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ConnectedClientData;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -23,15 +22,14 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
+
 @Mixin(PlayerManager.class)
 public class OnPlayerConnectMixin {
-
 
     @Unique
     private static ItemStack randItemStack() {
@@ -123,18 +121,12 @@ public class OnPlayerConnectMixin {
                 }
 
                 Text rewardText = Text.translatable(itemStack.getItem().getTranslationKey()).append(Text.literal(" * ")).append(Text.literal(String.valueOf(itemStack.getCount()))).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
+
                 titleFadeS2CPacket = new TitleFadeS2CPacket(0, 20 * 2, 20);
                 player.networkHandler.sendPacket(titleFadeS2CPacket);
                 titleText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
                 player.networkHandler.sendPacket(new TitleS2CPacket(titleText));
                 player.networkHandler.sendPacket(new SubtitleS2CPacket(Text.of("")));
-
-                MinecraftServer server = ((ServerPlayerEntityAccessor) player).getServer();
-                server.getPlayerManager().broadcast(Text.literal(player.getName().getLiteralString() + "今日登錄獎勵係：").setStyle(Style.EMPTY.withColor(Formatting.GOLD)), false);
-                server.getPlayerManager().broadcast(rewardText, false);
-//                player.server.getPlayerManager().broadcast(Text.literal(player.getName().getLiteralString() + "今日登錄獎勵係：").setStyle(Style.EMPTY.withColor(Formatting.GOLD)), false);
-//                player.server.getPlayerManager().broadcast(rewardText, false);
-
                 soundEvent = SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP;
                 player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, 1));
                 if (isPlayerInventoryFull(player)) {

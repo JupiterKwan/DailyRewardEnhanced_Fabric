@@ -2,7 +2,7 @@
 
 ### Author: JupiterKwan
 
-### CurrentVersion: 1.2 
+### CurrentVersion: 1.3
 
 ### [![build](https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/actions/workflows/build.yml/badge.svg)](https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/actions/workflows/build.yml)
 
@@ -12,8 +12,7 @@
 
 Give everyone 1 - 5 random item(s) as reward when they first login everyday. :)
 
-For ```Minecraft version 1.21``` and works perfectly on my ```1.21 Fabric Server```. It should work just fine on ```1.21.x```
-versions as well (if it exists).
+For ```Minecraft version 1.21.10``` and works perfectly on my ```1.21.10 Fabric Server```.
 
 ## Usage
 
@@ -49,6 +48,9 @@ in ```./build/libs``` folder.
 - Still thinking...
 
 ## Update News
+
+### Version 1.3
+- Support 1.21.10.
 
 ### Version 1.2
 

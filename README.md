@@ -2,7 +2,7 @@
 
 ### Author: JupiterKwan
 
-### CurrentVersion: 1.3
+### CurrentVersion: 1.4
 
 ### [![build](https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/actions/workflows/build.yml/badge.svg)](https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/actions/workflows/build.yml)
 
@@ -12,7 +12,7 @@
 
 Give everyone 1 - 5 random item(s) as reward when they first login everyday. :)
 
-For ```Minecraft version 1.21.10``` and works perfectly on my ```1.21.10 Fabric Server```.
+For ```Minecraft version 26.1.2```.
 
 ## Usage
 
@@ -21,7 +21,7 @@ server and good to go.
 
 ## In Game Command
 
-Current has two command for this plugin: ```/rewardBlackList``` & ```/rewardBlackListAdd <itemName>``` and their usage are apparently show what they can do. :>
+Current has three commands for this plugin: ```/rewardBlackList```, ```/rewardBlackListAdd <itemName>``` and ```/rewardBlackListDelete <itemName>```. The delete command lets admins fix mistaken blacklist entries.
 
 ## Config
 
@@ -48,6 +48,11 @@ in ```./build/libs``` folder.
 - Still thinking...
 
 ## Update News
+
+### Version 1.4
+- Support 26.1.2.
+- Add Chinese and English language support.
+- Fix some bugs.
 
 ### Version 1.3
 - Support 1.21.10.

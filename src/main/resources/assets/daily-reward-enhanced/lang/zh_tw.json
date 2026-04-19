@@ -1,0 +1,20 @@
+{
+  "command.daily-reward-enhanced.blacklist.list": "獎勵黑名單：\n%s",
+  "command.daily-reward-enhanced.blacklist.add.exists": "%s 已經在黑名單中了！",
+  "command.daily-reward-enhanced.blacklist.add.success": "%s 已加入黑名單。",
+  "command.daily-reward-enhanced.blacklist.add.error": "更新黑名單時發生錯誤。",
+  "command.daily-reward-enhanced.blacklist.delete.not_found": "%s 不在黑名單中。",
+  "command.daily-reward-enhanced.blacklist.delete.success": "%s 已從黑名單移除。",
+  "command.daily-reward-enhanced.blacklist.delete.error": "自黑名單移除時發生錯誤。",
+  "message.daily-reward-enhanced.last_login_date": "上次登入日期：%s",
+  "message.daily-reward-enhanced.already_claimed": "你今天已經領過獎勵了，將略過發放。",
+  "message.daily-reward-enhanced.inventory_full": "注意！你的背包已滿，獎勵已掉在腳邊。",
+  "message.daily-reward-enhanced.reward_obtained_prefix": "今日獎勵：",
+  "message.daily-reward-enhanced.reward_obtained": "今日獎勵：%1$s x %2$s",
+  "title.daily-reward-enhanced.rolling": "今日登入獎勵是...",
+  "title.daily-reward-enhanced.welcome": "歡迎回來",
+  "subtitle.daily-reward-enhanced.server_name": "「 Central HK 」"
+}
+
+
+

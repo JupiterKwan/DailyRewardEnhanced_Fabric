@@ -1,0 +1,20 @@
+{
+  "command.daily-reward-enhanced.blacklist.list": "賞格黑錄：\n%s",
+  "command.daily-reward-enhanced.blacklist.add.exists": "%s 已在黑錄矣！",
+  "command.daily-reward-enhanced.blacklist.add.success": "%s 已入黑錄。",
+  "command.daily-reward-enhanced.blacklist.add.error": "更黑錄時有誤。",
+  "command.daily-reward-enhanced.blacklist.delete.not_found": "%s 不在黑錄。",
+  "command.daily-reward-enhanced.blacklist.delete.success": "%s 已出黑錄。",
+  "command.daily-reward-enhanced.blacklist.delete.error": "去黑錄時有誤。",
+  "message.daily-reward-enhanced.last_login_date": "前次登入之日：%s",
+  "message.daily-reward-enhanced.already_claimed": "今日之賞既領，故不復給。",
+  "message.daily-reward-enhanced.inventory_full": "囊已滿，賞物置於足下。",
+  "message.daily-reward-enhanced.reward_obtained_prefix": "今日所賞：",
+  "message.daily-reward-enhanced.reward_obtained": "今日所賞：%1$s x %2$s",
+  "title.daily-reward-enhanced.rolling": "今日登入之賞，乃...",
+  "title.daily-reward-enhanced.welcome": "歡迎復來！",
+  "subtitle.daily-reward-enhanced.server_name": "「 香江中樞玉府 」"
+}
+
+
+

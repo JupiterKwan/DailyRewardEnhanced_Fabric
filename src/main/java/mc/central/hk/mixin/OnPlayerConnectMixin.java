@@ -1,110 +1,106 @@
 package mc.central.hk.mixin;
 
 import mc.central.hk.DailyRewardEnhanced;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.packet.s2c.play.*;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.server.PlayerManager;
-import net.minecraft.server.network.ConnectedClientData;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import mc.central.hk.i18n.ServerI18n;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitleTextPacket;
+import net.minecraft.network.protocol.game.ClientboundSetTitlesAnimationPacket;
+import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
-
-@Mixin(PlayerManager.class)
+@Mixin(PlayerList.class)
 public class OnPlayerConnectMixin {
 
     @Unique
     private static ItemStack randItemStack() {
-        // 获取注册表中物品的数量
-        int itemSize = Registries.ITEM.size();
-        Random randNum = new Random();
-        return new ItemStack(Item.byRawId(randNum.nextInt(itemSize)), randNum.nextInt(5) + 1);
+        int itemSize = BuiltInRegistries.ITEM.size();
+        Random random = new Random();
+        return new ItemStack(Item.byId(random.nextInt(itemSize)), random.nextInt(5) + 1);
     }
 
     @Unique
-    private static boolean isPlayerInventoryFull(PlayerEntity player) {
-        return player.getInventory().getEmptySlot() <= 0;
+    private static boolean isPlayerInventoryFull(Player player) {
+        return player.getInventory().getFreeSlot() < 0;
     }
 
-    @Inject(at = @At(value = "RETURN"), method = "onPlayerConnect")
-    private void onPlayerJoin(ClientConnection connection, ServerPlayerEntity player, ConnectedClientData clientData, CallbackInfo ci) throws InterruptedException {
+    @Unique
+    private static String getItemIdPath(ItemStack itemStack) {
+        return BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath();
+    }
+
+    @Inject(at = @At("RETURN"), method = "placeNewPlayer")
+    private void onPlayerJoin(Connection connection, ServerPlayer player, CommonListenerCookie clientData, CallbackInfo ci) {
         boolean isAlreadyLogin = false;
-        if (DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayersLoginDate().containsKey(player.getUuid().toString())) {
-            String lastLoginDate = DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayersLoginDate().get(player.getUuid().toString());
-            player.sendMessage(Text.literal("上次登錄日期為：").append(Text.literal(lastLoginDate)).setStyle(Style.EMPTY.withColor(Formatting.GRAY)), false);
+        String uuid = player.getUUID().toString();
+
+        if (DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayersLoginDate().containsKey(uuid)) {
+            String lastLoginDate = DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayersLoginDate().get(uuid);
+            player.sendSystemMessage(ServerI18n.tr(player, "message.daily-reward-enhanced.last_login_date", lastLoginDate).withStyle(ChatFormatting.GRAY));
             if (LocalDate.now().toString().equals(lastLoginDate)) {
                 isAlreadyLogin = true;
-                player.sendMessage(Text.literal("今天已經登錄過，跳過獎勵！").setStyle(Style.EMPTY.withColor(Formatting.GRAY)), false);
+                player.sendSystemMessage(ServerI18n.tr(player, "message.daily-reward-enhanced.already_claimed").withStyle(ChatFormatting.GRAY));
             }
         }
 
         if (!isAlreadyLogin) {
-
-            CompletableFuture<Void> futureRollReward = CompletableFuture.supplyAsync(() -> {
-
+            CompletableFuture.runAsync(() -> {
                 try {
                     Thread.sleep(1500);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-
-                SendHello(player);
-                TitleFadeS2CPacket titleFadeS2CPacket;
-                Text titleText;
-                SoundEvent soundEvent;
-                try {
+                    sendHello(player);
                     Thread.sleep(1800);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
 
-                // Roll Control
-                // ====GameTick is 20 per second====
                 int titleShowMinTick = 2;
                 int titleShowMaxTick = 20;
                 int count = 0;
-                // =================================
+                Holder<SoundEvent> rollSound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.DISPENSER_FAIL);
 
                 while (titleShowMinTick < titleShowMaxTick) {
                     ItemStack itemStack = randItemStack();
-                    titleFadeS2CPacket = new TitleFadeS2CPacket(0, titleShowMinTick, 0);
-                    player.networkHandler.sendPacket(titleFadeS2CPacket);
-                    Text rewardText = Text.literal("今日登錄獎勵係...").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
-                    player.networkHandler.sendPacket(new TitleS2CPacket(rewardText));
-//                    titleText = Text.literal(String.valueOf(itemStack.getItem().getTranslationKey().split("\\.")[2])).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
-                    titleText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
-                    player.networkHandler.sendPacket(new SubtitleS2CPacket(titleText));
-                    soundEvent = SoundEvents.BLOCK_DISPENSER_FAIL;
-                    player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, 1));
+                    player.connection.send(new ClientboundSetTitlesAnimationPacket(0, titleShowMinTick, 0));
+                    Component rewardText = ServerI18n.tr(player, "title.daily-reward-enhanced.rolling").withStyle(ChatFormatting.GOLD);
+                    player.connection.send(new ClientboundSetTitleTextPacket(rewardText));
+                    Component titleText = Component.translatable(itemStack.getItem().getDescriptionId()).withStyle(ChatFormatting.LIGHT_PURPLE);
+                    player.connection.send(new ClientboundSetSubtitleTextPacket(titleText));
+                    player.connection.send(new ClientboundSoundEntityPacket(rollSound, SoundSource.PLAYERS, player, 1.0F, 1.0F, 1L));
+
                     try {
                         Thread.sleep(titleShowMinTick * 45L);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
+
                     if (count++ <= 10) {
-                        titleShowMinTick = titleShowMinTick + 1;
+                        titleShowMinTick += 1;
                     } else if (count++ <= 20) {
-                        titleShowMinTick = titleShowMinTick + 2;
+                        titleShowMinTick += 2;
                     } else {
-                        titleShowMinTick = titleShowMinTick * 2;
+                        titleShowMinTick *= 2;
                     }
                 }
 
@@ -112,53 +108,63 @@ public class OnPlayerConnectMixin {
                 ItemStack itemStack = randItemStack();
 
                 while (!isItem) {
-                    DailyRewardEnhanced.LOGGER.info("{} * {}", itemStack.getItem().getTranslationKey().split("\\.")[2], itemStack.getCount());
-                    if (DailyRewardEnhanced.CONFIG.loadBlackList().contains(itemStack.getItem().getTranslationKey().split("\\.")[2])) {
+                    String itemId = getItemIdPath(itemStack);
+                    DailyRewardEnhanced.LOGGER.info("{} * {}", itemId, itemStack.getCount());
+                    if (DailyRewardEnhanced.CONFIG.loadBlackList().contains(itemId)) {
                         itemStack = randItemStack();
                     } else {
                         isItem = true;
                     }
                 }
 
-                Text rewardText = Text.translatable(itemStack.getItem().getTranslationKey()).append(Text.literal(" * ")).append(Text.literal(String.valueOf(itemStack.getCount()))).setStyle(Style.EMPTY.withColor(Formatting.LIGHT_PURPLE));
+                int rewardCount = itemStack.getCount();
 
-                titleFadeS2CPacket = new TitleFadeS2CPacket(0, 20 * 2, 20);
-                player.networkHandler.sendPacket(titleFadeS2CPacket);
-                titleText = Text.translatable(itemStack.getItem().getTranslationKey()).setStyle(Style.EMPTY.withColor(Formatting.GOLD));
-                player.networkHandler.sendPacket(new TitleS2CPacket(titleText));
-                player.networkHandler.sendPacket(new SubtitleS2CPacket(Text.of("")));
-                soundEvent = SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP;
-                player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, 1));
+                Component rewardText = Component.translatable(itemStack.getItem().getDescriptionId())
+                        .append(Component.literal(" * "))
+                        .append(Component.literal(String.valueOf(itemStack.getCount())))
+                        .withStyle(ChatFormatting.LIGHT_PURPLE);
+
+                player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 40, 20));
+                Component titleText = Component.translatable(itemStack.getItem().getDescriptionId()).withStyle(ChatFormatting.GOLD);
+                player.connection.send(new ClientboundSetTitleTextPacket(titleText));
+                player.connection.send(new ClientboundSetSubtitleTextPacket(Component.empty()));
+
+                Holder<SoundEvent> rewardSound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.EXPERIENCE_ORB_PICKUP);
+                player.connection.send(new ClientboundSoundEntityPacket(rewardSound, SoundSource.PLAYERS, player, 1.0F, 1.0F, 1L));
+
                 if (isPlayerInventoryFull(player)) {
-                    Text fullInventoryText = Text.literal("注意啦，獎勵喺你嘅腳下喔").setStyle(Style.EMPTY.withColor(Formatting.RED));
-                    player.sendMessage(fullInventoryText, false);
-                    player.dropItem(itemStack, false);
+                    Component fullInventoryText = ServerI18n.tr(player, "message.daily-reward-enhanced.inventory_full").withStyle(ChatFormatting.RED);
+                    player.sendSystemMessage(fullInventoryText);
+                    player.drop(itemStack, false, false);
                 } else {
-                    player.getInventory().insertStack(itemStack);
+                    player.getInventory().add(itemStack);
                 }
-                DailyRewardEnhanced.LOGGER.info(String.valueOf(LocalDate.now()));
+
+                Component rewardMessage = ServerI18n.tr(player, "message.daily-reward-enhanced.reward_obtained_prefix")
+                        .append(Component.literal(" "))
+                        .append(Component.translatable(itemStack.getItem().getDescriptionId()))
+                        .append(Component.literal(" * " + rewardCount));
+                player.sendSystemMessage(rewardMessage);
+                DailyRewardEnhanced.LOGGER.info("{}", LocalDate.now());
                 try {
-                    DailyRewardEnhanced.PLAYER_LOGIN_DATES.putPlayerLoginDate(player.getUuid().toString(), LocalDate.now().toString());
+                    DailyRewardEnhanced.PLAYER_LOGIN_DATES.putPlayerLoginDate(uuid, LocalDate.now().toString());
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                return null;
             });
         } else {
-            SendHello(player);
+            sendHello(player);
         }
     }
 
     @Unique
-    private void SendHello(ServerPlayerEntity player) {
-        TitleFadeS2CPacket titleFadeS2CPacket = new TitleFadeS2CPacket(5, 15 * 2, 5);
-        player.networkHandler.sendPacket(titleFadeS2CPacket);
-        Text titleText = Text.literal("歡迎翻來!").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
-        Text titleText2 = Text.literal("Central HK").setStyle(Style.EMPTY.withColor(Formatting.GOLD));
-        SoundEvent soundEvent = SoundEvents.ENTITY_CAT_PURREOW;
-        player.networkHandler.sendPacket(new PlaySoundFromEntityS2CPacket(RegistryEntry.of(soundEvent), SoundCategory.PLAYERS, player, 1, 1, new Random().nextLong(100000L)));
-        player.networkHandler.sendPacket(new TitleS2CPacket(titleText));
-        player.networkHandler.sendPacket(new SubtitleS2CPacket(titleText2));
+    private void sendHello(ServerPlayer player) {
+        player.connection.send(new ClientboundSetTitlesAnimationPacket(5, 30, 5));
+        Component titleText = ServerI18n.tr(player, "title.daily-reward-enhanced.welcome").withStyle(ChatFormatting.GOLD);
+        Component subtitleText = ServerI18n.tr(player, "subtitle.daily-reward-enhanced.server_name").withStyle(ChatFormatting.GOLD);
+        player.connection.send(new ClientboundSoundEntityPacket(SoundEvents.CAT_PURREOW_BABY, SoundSource.PLAYERS, player, 1.0F, 1.0F, new Random().nextLong(100000L)));
+        player.connection.send(new ClientboundSetTitleTextPacket(titleText));
+        player.connection.send(new ClientboundSetSubtitleTextPacket(subtitleText));
     }
 
 }

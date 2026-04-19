@@ -2,11 +2,10 @@ package mc.central.hk.config;
 
 import com.mojang.brigadier.context.CommandContext;
 import mc.central.hk.DailyRewardEnhanced;
+import mc.central.hk.i18n.ServerI18n;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.commands.CommandSourceStack;
 
 import java.io.*;
 import java.util.*;
@@ -20,23 +19,41 @@ public class DailyRewardConfig {
         this.blacklist.addAll(savedConfig);
     }
 
-    public int addBlackList(CommandContext<ServerCommandSource> ctx, String itemName) {
+    public int addBlackList(CommandContext<CommandSourceStack> ctx, String itemName) {
         if (this.blacklist.contains(itemName)) {
-            ctx.getSource().sendFeedback(() -> Text.literal("%s is already in black list!".formatted(itemName)).setStyle(Style.EMPTY.withColor(Formatting.RED)), false);
+            ctx.getSource().sendFailure(ServerI18n.tr(ctx.getSource(), "command.daily-reward-enhanced.blacklist.add.exists", itemName).withStyle(ChatFormatting.RED));
             return 0;
         } else {
             DailyRewardEnhanced.CONFIG.blacklist.add(itemName);
             int result = Manager.writeConfig(DailyRewardEnhanced.CONFIG.blacklist);
             if (result == 1) {
-                ctx.getSource().sendFeedback(() -> Text.literal("%s is added to black list.".formatted(itemName)).setStyle(Style.EMPTY.withColor(Formatting.GREEN)), true);
+                ctx.getSource().sendSuccess(() -> ServerI18n.tr(ctx.getSource(), "command.daily-reward-enhanced.blacklist.add.success", itemName).withStyle(ChatFormatting.GREEN), true);
                 return 1;
             } else {
-                ctx.getSource().sendFeedback(() -> Text.literal("Something went wrong! So sad."), true);
+                ctx.getSource().sendFailure(ServerI18n.tr(ctx.getSource(), "command.daily-reward-enhanced.blacklist.add.error"));
                 return 0;
             }
 
         }
     }
+
+    public int removeBlackList(CommandContext<CommandSourceStack> ctx, String itemName) {
+        if (!this.blacklist.contains(itemName)) {
+            ctx.getSource().sendFailure(ServerI18n.tr(ctx.getSource(), "command.daily-reward-enhanced.blacklist.delete.not_found", itemName).withStyle(ChatFormatting.RED));
+            return 0;
+        }
+
+        DailyRewardEnhanced.CONFIG.blacklist.remove(itemName);
+        int result = Manager.writeConfig(DailyRewardEnhanced.CONFIG.blacklist);
+        if (result == 1) {
+            ctx.getSource().sendSuccess(() -> ServerI18n.tr(ctx.getSource(), "command.daily-reward-enhanced.blacklist.delete.success", itemName).withStyle(ChatFormatting.GREEN), true);
+            return 1;
+        }
+
+        ctx.getSource().sendFailure(ServerI18n.tr(ctx.getSource(), "command.daily-reward-enhanced.blacklist.delete.error"));
+        return 0;
+    }
+
 
     public ArrayList<Object> loadBlackList() {
         return DailyRewardEnhanced.CONFIG.blacklist;

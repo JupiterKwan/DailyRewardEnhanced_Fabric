@@ -1,0 +1,19 @@
+{
+  "command.daily-reward-enhanced.blacklist.list": "Reward blacklist:\n%s",
+  "command.daily-reward-enhanced.blacklist.add.exists": "%s is already in the blacklist!",
+  "command.daily-reward-enhanced.blacklist.add.success": "%s has been added to the blacklist.",
+  "command.daily-reward-enhanced.blacklist.add.error": "Something went wrong while updating the blacklist.",
+  "command.daily-reward-enhanced.blacklist.delete.not_found": "%s is not in the blacklist.",
+  "command.daily-reward-enhanced.blacklist.delete.success": "%s has been removed from the blacklist.",
+  "command.daily-reward-enhanced.blacklist.delete.error": "Something went wrong while removing from the blacklist.",
+  "message.daily-reward-enhanced.last_login_date": "Last login date: %s",
+  "message.daily-reward-enhanced.already_claimed": "You already claimed today's reward. Skipping reward.",
+  "message.daily-reward-enhanced.inventory_full": "Your inventory is full. The reward was dropped at your feet.",
+  "message.daily-reward-enhanced.reward_obtained_prefix": "Today's reward:",
+  "message.daily-reward-enhanced.reward_obtained": "Today's reward: %1$s * %2$s",
+  "title.daily-reward-enhanced.rolling": "Today's login reward is...",
+  "title.daily-reward-enhanced.welcome": "Welcome back",
+  "subtitle.daily-reward-enhanced.server_name": "「 Central HK 」"
+}
+
+

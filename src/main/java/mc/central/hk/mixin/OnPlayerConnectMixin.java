@@ -117,15 +117,11 @@ public class OnPlayerConnectMixin {
                     }
                 }
 
+                String rewardItemDescriptionId = itemStack.getItem().getDescriptionId();
                 int rewardCount = itemStack.getCount();
 
-                Component rewardText = Component.translatable(itemStack.getItem().getDescriptionId())
-                        .append(Component.literal(" * "))
-                        .append(Component.literal(String.valueOf(itemStack.getCount())))
-                        .withStyle(ChatFormatting.LIGHT_PURPLE);
-
                 player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 40, 20));
-                Component titleText = Component.translatable(itemStack.getItem().getDescriptionId()).withStyle(ChatFormatting.GOLD);
+                Component titleText = Component.translatable(rewardItemDescriptionId).withStyle(ChatFormatting.GOLD);
                 player.connection.send(new ClientboundSetTitleTextPacket(titleText));
                 player.connection.send(new ClientboundSetSubtitleTextPacket(Component.empty()));
 
@@ -142,7 +138,7 @@ public class OnPlayerConnectMixin {
 
                 Component rewardMessage = ServerI18n.tr(player, "message.daily-reward-enhanced.reward_obtained_prefix")
                         .append(Component.literal(" "))
-                        .append(Component.translatable(itemStack.getItem().getDescriptionId()))
+                        .append(Component.translatable(rewardItemDescriptionId))
                         .append(Component.literal(" * " + rewardCount));
                 player.sendSystemMessage(rewardMessage);
                 DailyRewardEnhanced.LOGGER.info("{}", LocalDate.now());

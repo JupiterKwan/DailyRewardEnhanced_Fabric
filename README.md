@@ -2,7 +2,7 @@
 
 ### Author: JupiterKwan
 
-### CurrentVersion: 1.4
+### CurrentVersion: 1.5
 
 ### [![build](https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/actions/workflows/build.yml/badge.svg)](https://github.com/JupiterKwan/DailyRewardEnhanced_Fabric/actions/workflows/build.yml)
 
@@ -21,13 +21,27 @@ server and good to go.
 
 ## In Game Command
 
-Current has three commands for this plugin: ```/rewardBlackList```, ```/rewardBlackListAdd <itemName>``` and ```/rewardBlackListDelete <itemName>```. The delete command lets admins fix mistaken blacklist entries.
+Admin commands are now grouped under ```/dailyreward```:
+
+- ```/dailyreward blacklist list```
+- ```/dailyreward blacklist add <itemName>```
+- ```/dailyreward blacklist remove <itemName>```
+- ```/dailyreward config list```
+- ```/dailyreward config add <day> <countMultiplier> <extraDraws>```
+- ```/dailyreward config remove <day>```
+- ```/dailyreward config reload```
 
 ## Config
 
-The default config will be generated in ```./config/daily-reward-enhanced.json```, remember to use all lowercase item-id.
+The mod now stores all runtime configs under ```./config/daily-reward-enhanced/```:
 
-You can check out the code folder ```./daily-reward-enhanced.json``` where is saved my personal config file.
+- ```blacklist.json``` reward blacklist entries (all lowercase item ids)
+- ```players.json``` player login date + streak data
+- ```streak-rewards.json``` streak rule settings (amount multiplier / extra draws)
+
+Legacy files are migrated automatically on server startup.
+
+You can still check ```./daily-reward-enhanced.json``` in the repository as a personal blacklist example.
 
 The example config is below:
 
@@ -38,9 +52,32 @@ The example config is below:
 ]
 ```
 
+Streak rewards example:
+
+```json
+{
+  "enabled": true,
+  "stackByThreshold": true,
+  "maxCountMultiplier": 8,
+  "maxDrawTimes": 4,
+  "rules": [
+    {
+      "day": 3,
+      "countMultiplier": 2,
+      "extraDraws": 0
+    },
+    {
+      "day": 7,
+      "countMultiplier": 1,
+      "extraDraws": 1
+    }
+  ]
+}
+```
+
 ## Compile
 
-This is a Gradle project made in Intellij Idea with JDK 21. To compile, simply run ```build``` & ```jar```. The output JAR will be located
+This is a Gradle project made in Intellij Idea with JDK 25. To compile, simply run ```build``` & ```jar```. The output JAR will be located
 in ```./build/libs``` folder.
 
 ## TODO
@@ -48,6 +85,11 @@ in ```./build/libs``` folder.
 - Still thinking...
 
 ## Update News
+
+### Version 1.5
+- Add support for streak rewards, which can be configured to give players extra reward draws or increase the amount multiplier when they have logged in for a certain number of consecutive days.
+- Rewrite the config system to support multiple config files and make it easier to manage different types of configs.
+- Now  command ```/dailyreward``` is used to manage both blacklist and streak rewards, with subcommands for listing, adding, removing, and reloading configs.
 
 ### Version 1.4
 - Support 26.1.2.

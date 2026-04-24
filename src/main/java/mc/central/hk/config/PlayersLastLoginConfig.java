@@ -1,77 +1,120 @@
 package mc.central.hk.config;
 
-import com.mojang.authlib.minecraft.client.ObjectMapper;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import mc.central.hk.DailyRewardEnhanced;
-import net.fabricmc.loader.api.FabricLoader;
 
-import java.io.*;
-import java.nio.file.Files;
-import java.time.LocalDate;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Properties;
-import java.util.stream.Collectors;
+import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class PlayersLastLoginConfig {
 
-    private static final HashMap<String, String> playersLoginDate = new HashMap<>();
-    private static File configFile;
+    private static final String LEGACY_FILE_NAME = DailyRewardEnhanced.MOD_ID + "-players.json";
+    private static final String CONFIG_FILE_NAME = "players.json";
 
-    private static void prepareConfigFile() {
-        if (configFile != null) {
+    private static final HashMap<String, PlayerLoginState> playersLoginState = new HashMap<>();
+    private static Path configPath;
+
+    public static class PlayerLoginState {
+        private String lastLoginDate;
+        private int streakDays;
+
+        public PlayerLoginState() {
+        }
+
+        public PlayerLoginState(String lastLoginDate, int streakDays) {
+            this.lastLoginDate = lastLoginDate;
+            this.streakDays = Math.max(1, streakDays);
+        }
+
+        public String getLastLoginDate() {
+            return lastLoginDate;
+        }
+
+        public int getStreakDays() {
+            return Math.max(1, streakDays);
+        }
+    }
+
+    private static synchronized void prepareConfigFile() {
+        if (configPath != null) {
             return;
         }
-        configFile = new File(FabricLoader.getInstance().getConfigDir().toFile(), DailyRewardEnhanced.MOD_ID + "-players.json");
+        configPath = ConfigPaths.resolve(CONFIG_FILE_NAME);
+        ConfigPaths.migrateLegacyFile(LEGACY_FILE_NAME, configPath);
     }
 
-    private static void createConfigFile() {
-        createConfig();
-    }
-
-    private static void createConfig() {
+    private static void createDefaultConfig() {
         prepareConfigFile();
-        playersLoginDate.put("File-Generating-in", LocalDate.now().toString());
-        try (FileWriter fileWriter = new FileWriter(configFile)) {
-            fileWriter.write(DailyRewardEnhanced.GSON.toJson(playersLoginDate));
+        playersLoginState.clear();
+        try (Writer writer = Files.newBufferedWriter(configPath)) {
+            DailyRewardEnhanced.GSON.toJson(playersLoginState, writer);
         } catch (IOException e) {
             DailyRewardEnhanced.LOGGER.error("Couldn't save daily-reward-enhanced config.", e);
         }
     }
 
-    public void loadPlayersLoginDate() {
+    public void loadPlayersLoginState() {
         prepareConfigFile();
         try {
-            if (!configFile.exists()) {
-                createConfigFile();
+            if (!Files.exists(configPath)) {
+                createDefaultConfig();
             }
-            if (configFile.exists()) {
-                BufferedReader bReader = new BufferedReader(new FileReader(configFile));
-                HashMap<String, String> savedConfig = DailyRewardEnhanced.GSON.fromJson(bReader, HashMap.class);
-                if (savedConfig != null) {
-                    playersLoginDate.clear();
-                    playersLoginDate.putAll(savedConfig);
+
+            try (Reader reader = Files.newBufferedReader(configPath)) {
+                JsonObject root = DailyRewardEnhanced.GSON.fromJson(reader, JsonObject.class);
+                playersLoginState.clear();
+
+                if (root == null) {
+                    return;
+                }
+
+                for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+                    String uuid = entry.getKey();
+                    JsonElement value = entry.getValue();
+
+                    if (value == null || value.isJsonNull()) {
+                        continue;
+                    }
+
+                    if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+                        playersLoginState.put(uuid, new PlayerLoginState(value.getAsString(), 1));
+                        continue;
+                    }
+
+                    if (value.isJsonObject()) {
+                        PlayerLoginState state = DailyRewardEnhanced.GSON.fromJson(value, PlayerLoginState.class);
+                        if (state != null && state.getLastLoginDate() != null && !state.getLastLoginDate().isBlank()) {
+                            playersLoginState.put(uuid, new PlayerLoginState(state.getLastLoginDate(), state.getStreakDays()));
+                        }
+                    }
                 }
             }
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             DailyRewardEnhanced.LOGGER.error("Couldn't load configuration for players-login-date.", e);
-            createConfigFile();
+            createDefaultConfig();
         }
     }
 
-    public HashMap<String, String> getPlayersLoginDate() {
-        return playersLoginDate;
+    public Map<String, PlayerLoginState> getPlayersLoginState() {
+        return Collections.unmodifiableMap(playersLoginState);
     }
 
-    public void putPlayerLoginDate(String playerName, String loginDate) throws IOException {
-        playersLoginDate.put(playerName, loginDate);
-        boolean isFileDelete = configFile.delete();
-        if (isFileDelete) {
-            prepareConfigFile();
-            try (FileWriter fileWriter = new FileWriter(configFile)) {
-                fileWriter.write(DailyRewardEnhanced.GSON.toJson(playersLoginDate));
-            } catch (IOException e) {
-                DailyRewardEnhanced.LOGGER.error("Couldn't save daily-reward-enhanced config.", e);
-            }
+    public PlayerLoginState getPlayerLoginState(String uuid) {
+        return playersLoginState.get(uuid);
+    }
+
+    public void putPlayerLoginState(String uuid, String loginDate, int streakDays) throws IOException {
+        prepareConfigFile();
+        playersLoginState.put(uuid, new PlayerLoginState(loginDate, streakDays));
+        try (Writer writer = Files.newBufferedWriter(configPath)) {
+            DailyRewardEnhanced.GSON.toJson(playersLoginState, writer);
         }
     }
 

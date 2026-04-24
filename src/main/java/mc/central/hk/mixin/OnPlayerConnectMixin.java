@@ -1,6 +1,8 @@
 package mc.central.hk.mixin;
 
 import mc.central.hk.DailyRewardEnhanced;
+import mc.central.hk.config.PlayersLastLoginConfig;
+import mc.central.hk.config.StreakRewardsConfig;
 import mc.central.hk.i18n.ServerI18n;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -20,6 +22,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,17 +31,27 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
 @Mixin(PlayerList.class)
 public class OnPlayerConnectMixin {
+    @Unique
+    private static final int MAX_ROLL_ATTEMPTS = 512;
+
 
     @Unique
     private static ItemStack randItemStack() {
         int itemSize = BuiltInRegistries.ITEM.size();
         Random random = new Random();
         return new ItemStack(Item.byId(random.nextInt(itemSize)), random.nextInt(5) + 1);
+    }
+
+    @Unique
+    private static boolean isValidRewardItem(ItemStack itemStack) {
+        return !itemStack.isEmpty() && itemStack.getItem() != Items.AIR;
     }
 
     @Unique
@@ -51,21 +64,73 @@ public class OnPlayerConnectMixin {
         return BuiltInRegistries.ITEM.getKey(itemStack.getItem()).getPath();
     }
 
+    @Unique
+    private static int calculateStreakDays(PlayersLastLoginConfig.PlayerLoginState state, LocalDate today) {
+        if (state == null || state.getLastLoginDate() == null || state.getLastLoginDate().isBlank()) {
+            return 1;
+        }
+
+        LocalDate lastDate;
+        try {
+            lastDate = LocalDate.parse(state.getLastLoginDate());
+        } catch (Exception ignored) {
+            return 1;
+        }
+
+        if (lastDate.equals(today.minusDays(1))) {
+            return state.getStreakDays() + 1;
+        }
+        return 1;
+    }
+
+    @Unique
+    private static ItemStack rollValidRewardItem() {
+        for (int i = 0; i < MAX_ROLL_ATTEMPTS; i++) {
+            ItemStack itemStack = randItemStack();
+            if (!isValidRewardItem(itemStack)) {
+                continue;
+            }
+
+            String itemId = getItemIdPath(itemStack);
+            if (!DailyRewardEnhanced.CONFIG.loadBlackList().contains(itemId)) {
+                return itemStack;
+            }
+        }
+
+        DailyRewardEnhanced.LOGGER.warn("Failed to roll valid reward item after {} attempts. Falling back to dirt.", MAX_ROLL_ATTEMPTS);
+        return new ItemStack(Items.DIRT, 1);
+    }
+
     @Inject(at = @At("RETURN"), method = "placeNewPlayer")
     private void onPlayerJoin(Connection connection, ServerPlayer player, CommonListenerCookie clientData, CallbackInfo ci) {
         boolean isAlreadyLogin = false;
         String uuid = player.getUUID().toString();
+        LocalDate today = LocalDate.now();
+        PlayersLastLoginConfig.PlayerLoginState loginState = DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayerLoginState(uuid);
 
-        if (DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayersLoginDate().containsKey(uuid)) {
-            String lastLoginDate = DailyRewardEnhanced.PLAYER_LOGIN_DATES.getPlayersLoginDate().get(uuid);
+        if (loginState != null && loginState.getLastLoginDate() != null) {
+            String lastLoginDate = loginState.getLastLoginDate();
             player.sendSystemMessage(ServerI18n.tr(player, "message.daily-reward-enhanced.last_login_date", lastLoginDate).withStyle(ChatFormatting.GRAY));
-            if (LocalDate.now().toString().equals(lastLoginDate)) {
+            if (today.toString().equals(lastLoginDate)) {
                 isAlreadyLogin = true;
                 player.sendSystemMessage(ServerI18n.tr(player, "message.daily-reward-enhanced.already_claimed").withStyle(ChatFormatting.GRAY));
             }
         }
 
+        final int streakDays = calculateStreakDays(loginState, today);
+        final StreakRewardsConfig.RewardBonus bonus = DailyRewardEnhanced.STREAK_REWARDS.evaluate(streakDays);
+
         if (!isAlreadyLogin) {
+            player.sendSystemMessage(
+                    ServerI18n.tr(
+                            player,
+                            "message.daily-reward-enhanced.streak_bonus",
+                            streakDays,
+                            bonus.getCountMultiplier(),
+                            bonus.getDrawTimes()
+                    ).withStyle(ChatFormatting.AQUA)
+            );
+
             CompletableFuture.runAsync(() -> {
                 try {
                     Thread.sleep(1500);
@@ -81,7 +146,7 @@ public class OnPlayerConnectMixin {
                 Holder<SoundEvent> rollSound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.DISPENSER_FAIL);
 
                 while (titleShowMinTick < titleShowMaxTick) {
-                    ItemStack itemStack = randItemStack();
+                    ItemStack itemStack = rollValidRewardItem();
                     player.connection.send(new ClientboundSetTitlesAnimationPacket(0, titleShowMinTick, 0));
                     Component rewardText = ServerI18n.tr(player, "title.daily-reward-enhanced.rolling").withStyle(ChatFormatting.GOLD);
                     player.connection.send(new ClientboundSetTitleTextPacket(rewardText));
@@ -104,21 +169,15 @@ public class OnPlayerConnectMixin {
                     }
                 }
 
-                boolean isItem = false;
-                ItemStack itemStack = randItemStack();
-
-                while (!isItem) {
-                    String itemId = getItemIdPath(itemStack);
-                    DailyRewardEnhanced.LOGGER.info("{} * {}", itemId, itemStack.getCount());
-                    if (DailyRewardEnhanced.CONFIG.loadBlackList().contains(itemId)) {
-                        itemStack = randItemStack();
-                    } else {
-                        isItem = true;
-                    }
+                List<ItemStack> rewards = new ArrayList<>();
+                for (int i = 0; i < bonus.getDrawTimes(); i++) {
+                    ItemStack reward = rollValidRewardItem();
+                    reward.setCount(Math.max(1, reward.getCount() * bonus.getCountMultiplier()));
+                    rewards.add(reward);
                 }
 
-                String rewardItemDescriptionId = itemStack.getItem().getDescriptionId();
-                int rewardCount = itemStack.getCount();
+                ItemStack highlightReward = rewards.get(0);
+                String rewardItemDescriptionId = highlightReward.getItem().getDescriptionId();
 
                 player.connection.send(new ClientboundSetTitlesAnimationPacket(0, 40, 20));
                 Component titleText = Component.translatable(rewardItemDescriptionId).withStyle(ChatFormatting.GOLD);
@@ -128,22 +187,32 @@ public class OnPlayerConnectMixin {
                 Holder<SoundEvent> rewardSound = BuiltInRegistries.SOUND_EVENT.wrapAsHolder(SoundEvents.EXPERIENCE_ORB_PICKUP);
                 player.connection.send(new ClientboundSoundEntityPacket(rewardSound, SoundSource.PLAYERS, player, 1.0F, 1.0F, 1L));
 
-                if (isPlayerInventoryFull(player)) {
-                    Component fullInventoryText = ServerI18n.tr(player, "message.daily-reward-enhanced.inventory_full").withStyle(ChatFormatting.RED);
-                    player.sendSystemMessage(fullInventoryText);
-                    player.drop(itemStack, false, false);
-                } else {
-                    player.getInventory().add(itemStack);
+                for (ItemStack reward : rewards) {
+                    String rewardDescriptionId = reward.getItem().getDescriptionId();
+                    int rewardCount = reward.getCount();
+                    DailyRewardEnhanced.LOGGER.info("{} * {}", getItemIdPath(reward), rewardCount);
+                    if (isPlayerInventoryFull(player)) {
+                        Component fullInventoryText = ServerI18n.tr(player, "message.daily-reward-enhanced.inventory_full").withStyle(ChatFormatting.RED);
+                        player.sendSystemMessage(fullInventoryText);
+                        player.drop(reward, false, false);
+                    } else {
+                        player.getInventory().add(reward);
+                    }
+
+                    Component rewardMessage = ServerI18n.tr(player, "message.daily-reward-enhanced.reward_obtained_public_prefix", player.getName().getString())
+                            .append(Component.literal(" "))
+                            .append(Component.translatable(rewardDescriptionId))
+                            .append(Component.literal(" * " + rewardCount));
+                    if (player.level().getServer() != null) {
+                        player.level().getServer().getPlayerList().broadcastSystemMessage(rewardMessage, false);
+                    } else {
+                        player.sendSystemMessage(rewardMessage);
+                    }
                 }
 
-                Component rewardMessage = ServerI18n.tr(player, "message.daily-reward-enhanced.reward_obtained_prefix")
-                        .append(Component.literal(" "))
-                        .append(Component.translatable(rewardItemDescriptionId))
-                        .append(Component.literal(" * " + rewardCount));
-                player.sendSystemMessage(rewardMessage);
-                DailyRewardEnhanced.LOGGER.info("{}", LocalDate.now());
+                DailyRewardEnhanced.LOGGER.info("{}", today);
                 try {
-                    DailyRewardEnhanced.PLAYER_LOGIN_DATES.putPlayerLoginDate(uuid, LocalDate.now().toString());
+                    DailyRewardEnhanced.PLAYER_LOGIN_DATES.putPlayerLoginState(uuid, today.toString(), streakDays);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
